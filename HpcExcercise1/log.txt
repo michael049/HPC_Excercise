@@ -1,0 +1,7 @@
+:22:30: error: use of undeclared identifier 'thid1'; did you mean 'thid'?
+        g_odata[thid] = temp[pout*n+thid1]; // write output 
+                                    ^~~~~
+                                    thid
+:4:6: note: 'thid' declared here
+        int thid = get_global_id(0);  
+            ^
