@@ -140,10 +140,9 @@ int main(int argc, char **argv){
 	float A [] = { 0,0,0,0,0,0 };
 	float B [] = { 1,2,3,4,5,6 };
 	float * T = NULL;
-	T = (float *) malloc(sizeof(float)*6*2);
-	
+	T = (float *) malloc(sizeof(float)*6*2);	
 	int num = 6;
-	int *n = &num;
+
 	memobjA = clCreateBuffer(myctx, CL_MEM_READ_WRITE, 6*sizeof(float), NULL, &err);
 	memobjB = clCreateBuffer(myctx, CL_MEM_READ_WRITE, 6*sizeof(float), NULL, &err);
 	memobjC = clCreateBuffer(myctx, CL_MEM_READ_WRITE, sizeof(int), NULL, &err);
@@ -206,7 +205,6 @@ int main(int argc, char **argv){
 		printf("%f ",A[i]);
 		//printf("%f ",B[i]);
 	}
-
 
 	getchar();
 }
