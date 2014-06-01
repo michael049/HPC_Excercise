@@ -3,7 +3,6 @@
 #################
 
 *.pydevproject
-.project
 .metadata
 bin/
 tmp/
@@ -14,7 +13,6 @@ tmp/
 *.exe
 local.properties
 .classpath
-.settings/
 .loadpath
 
 # External tool builders
