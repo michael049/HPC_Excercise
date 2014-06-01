@@ -1,11 +1,11 @@
 // Author: Markus Schordan, 2011.
 
-#include "CL/cl.h"
+#include <CL/cl.h>
 #include <malloc.h>
 #include <iostream>
 #include <string>
 #include <sstream>
-
+#include <sys/stat.h>
 
 
 using namespace std;
@@ -132,23 +132,42 @@ cl_int createContext(cl_context& myctx, cl_device_id & deviceIds)
 
 	// set platform property - we j&ust pick the first one
 	cl_context_properties properties[] = {CL_CONTEXT_PLATFORM, (int) platforms[0], 0};
-	 myctx = clCreateContextFromType ( properties, CL_DEVICE_TYPE_GPU, NULL, NULL, &err);
-	 return createDevice(platforms,numPlatforms, myctx,   deviceIds) ;
+	myctx = clCreateContextFromType ( properties, CL_DEVICE_TYPE_GPU, NULL, NULL, &err);
+	return createDevice(platforms,numPlatforms, myctx,   deviceIds) ;
 }
 
-int main(int argc, char **argv){
-	
+static char * LoadProgramSourceFromFile(const char *filename)
+{
+    struct stat statbuf;
+    FILE        *fh;
+    char        *source;
 
-	
+    fh = fopen(filename, "r");
+    if (fh == 0)
+        return 0;
+
+    stat(filename, &statbuf);
+    source = (char *) malloc(statbuf.st_size + 1);
+    fread(source, statbuf.st_size, 1, fh);
+    source[statbuf.st_size] = '\0';
+
+    return source;
+}
+int main(int argc, char **argv)
+{
 	cl_context myctx;
 	cl_device_id deviceIds;
 	createContext(myctx,deviceIds);
 	// create the program
-cl_program myprog = clCreateProgramWithSource ( myctx,1, (const char **)&source, &program_length, &ciErrNum);
-// build the program
-ciErrNum = clBuildProgram( myprog, 0,NULL, NULL, NULL, NULL);
-//Use the “image_rotate” function as the kernel
-cl_kernel mykernel = clCreateKernel (myprog , “image_rotate” ,error_code);
+	char * filename = "rotation.cl";
+
+	char *source = LoadProgramSourceFromFile(filename);
+	cl_int err;
+	cl_program myprog = clCreateProgramWithSource ( myctx,1, (const char **) & source, NULL, &err);
+	// build the program
+	cl_int ciErrNum = clBuildProgram( myprog, 0,NULL, NULL, NULL, NULL);
+	//Use the “image_rotate” function as the kernel
+	cl_kernel mykernel = clCreateKernel (myprog , "image_rotate", &err);
 }
 
 void shrCheckError(cl_uint ErrCode)

@@ -66,6 +66,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="tga.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="tga.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="lenna.tga" />
+    <None Include="rotation.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
