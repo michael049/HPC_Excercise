@@ -1,12 +1,11 @@
-// Author: Markus Schordan, 2011.
-
-#include <CL/cl.h>
+#include "CL/cl.h"
 #include <malloc.h>
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <sys/stat.h>
+#include <fstream>
 
+#define MEM_SIZE (128)
 
 using namespace std;
 
@@ -70,7 +69,7 @@ string cl_errorstring(cl_int err) {
 void handle_clerror(cl_int err) {
 	if (err != CL_SUCCESS){
 		cerr << "OpenCL Error: " << cl_errorstring(err) << string(".") << endl;
-		exit(EXIT_FAILURE);
+		//exit(EXIT_FAILURE);
 	}
 }
 
@@ -102,43 +101,111 @@ cl_int createContext(cl_context& myctx, cl_device_id & deviceIds)
 
 	// set platform property - we j&ust pick the first one
 	cl_context_properties properties[] = {CL_CONTEXT_PLATFORM, (int) platforms[0], 0};
-	myctx = clCreateContextFromType ( properties, CL_DEVICE_TYPE_GPU, NULL, NULL, &err);
-	return createDevice(platforms,numPlatforms, myctx,   deviceIds) ;
+	 myctx = clCreateContextFromType ( properties, CL_DEVICE_TYPE_GPU, NULL, NULL, &err);
+	 return createDevice(platforms,numPlatforms, myctx,   deviceIds) ;
 }
 
-static char * LoadProgramSourceFromFile(const char *filename)
+string GetClSource(string filename)
 {
-    struct stat statbuf;
-    FILE        *fh;
-    char        *source;
-
-    fh = fopen(filename, "r");
-    if (fh == 0)
-        return 0;
-
-    stat(filename, &statbuf);
-    source = (char *) malloc(statbuf.st_size + 1);
-    fread(source, statbuf.st_size, 1, fh);
-    source[statbuf.st_size] = '\0';
-
-    return source;
+	std::ifstream ifs(filename);
+	std::string source( (std::istreambuf_iterator<char>(ifs) ),
+                       (std::istreambuf_iterator<char>()    ) );
+	size_t test = source.length();
+	return source;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv){
+	
 	cl_context myctx;
 	cl_device_id deviceIds;
-	createContext(myctx,deviceIds);
-	// create the program
-	char * filename = "rotation.cl";
-
-	char *source = LoadProgramSourceFromFile(filename);
 	cl_int err;
-	cl_program myprog = clCreateProgramWithSource ( myctx,1, (const char **) & source, NULL, &err);
-	// build the program
-	cl_int ciErrNum = clBuildProgram( myprog, 0,NULL, NULL, NULL, NULL);
-	//Use the “image_rotate” function as the kernel
-	cl_kernel mykernel = clCreateKernel (myprog , "image_rotate", &err);
+	cl_command_queue command_queue = NULL;
+	cl_mem memobjA = NULL;
+	cl_mem memobjB = NULL;
+	cl_mem memobjC = NULL;
+	cl_mem memobjT = NULL;
+	cl_program program = NULL;
+	cl_kernel kernel = NULL;
+	createContext(myctx,deviceIds);
+
+	string sourceString = GetClSource("DeviceSource.cl");
+	const char * src_c = sourceString.c_str();
+	const size_t sourceSize = sourceString.length();
+
+	/* Create Command Queue */
+	command_queue = clCreateCommandQueue(myctx, deviceIds, 0, &err); 
+		
+	/* Create Memory Buffer */
+	float A [] = { 0,0,0,0,0,0 };
+	float B [] = { 1,2,3,4,5,6 };
+	float * T = NULL;
+	T = (float *) malloc(sizeof(float)*6*2);	
+	int num = 6;
+
+	memobjA = clCreateBuffer(myctx, CL_MEM_READ_WRITE, 6*sizeof(float), NULL, &err);
+	memobjB = clCreateBuffer(myctx, CL_MEM_READ_WRITE, 6*sizeof(float), NULL, &err);
+	memobjC = clCreateBuffer(myctx, CL_MEM_READ_WRITE, sizeof(int), NULL, &err);
+	memobjT = clCreateBuffer(myctx, CL_MEM_READ_WRITE, 6*2*sizeof(float), NULL, &err);
+ 
+	/* Copy input data to the memory buffer */
+	err = clEnqueueWriteBuffer(command_queue, memobjA, CL_TRUE, 0, 6*sizeof(float), A, 0, NULL, NULL);
+	err = clEnqueueWriteBuffer(command_queue, memobjB, CL_TRUE, 0, 6*sizeof(float), B, 0, NULL, NULL);
+	err = clEnqueueWriteBuffer(command_queue, memobjT, CL_TRUE, 0, 6*2*sizeof(float), T, 0, NULL, NULL);
+	err = clEnqueueWriteBuffer(command_queue, memobjC, CL_TRUE, 0, sizeof(int), &num, 0, NULL, NULL);
+
+	/* Create Kernel Program from the source */
+	program = clCreateProgramWithSource(myctx, 1, &src_c,
+		&sourceSize, &err);
+ 
+	/* Build Kernel Program */
+	err = clBuildProgram(program, 1, &deviceIds, NULL, NULL, NULL);
+
+	if(err != CL_SUCCESS)
+	{
+		size_t len;
+		clGetProgramBuildInfo(program, deviceIds, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);
+		//allocate memory:
+		char *log = new char[len]; 
+		//then recall clGetProgramBuildInfo():
+		clGetProgramBuildInfo(program, deviceIds, CL_PROGRAM_BUILD_LOG, len, log, NULL);
+		printf(log);
+		ofstream myfile;
+		myfile.open ("log.txt");
+		myfile << log;
+	}
+
+	/* Create OpenCL Kernel */
+	kernel = clCreateKernel(program, "scan", &err);
+
+	/* Set OpenCL kernel arguments */
+	err = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&memobjA);
+	err = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&memobjB);
+	err = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&memobjC);
+	err = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&memobjT);
+ 
+	/* Set OpenCL Kernel Parameters */
+	//err = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&memobj);
+ 
+	/* Execute OpenCL Kernel */
+	size_t global_item_size = 6;
+    size_t local_item_size = 1;
+    /* Execute OpenCL kernel as data parallel */
+    err = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
+    &global_item_size, &local_item_size, 0, NULL, NULL);
+	//err = clEnqueueTask(command_queue, kernel, 0, NULL,NULL);
+ 
+	/* Copy results from the memory buffer */
+	err = clEnqueueReadBuffer(command_queue, memobjA, CL_TRUE, 0,
+		6 * sizeof(float),A, 0, NULL, NULL);
+ 
+	/* Display Result */
+	for (int i = 0; i < 6; i++)
+	{
+		printf("%f ",A[i]);
+		//printf("%f ",B[i]);
+	}
+
+	getchar();
 }
 
 void shrCheckError(cl_uint ErrCode)

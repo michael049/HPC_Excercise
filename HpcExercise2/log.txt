@@ -1,0 +1,9 @@
+:10:16: error: invalid operands to binary expression ('int __attribute__((address_space(1))) *' and 'int')
+        for (int d = n>>1; d > 0; d >>= 1)                    // build sum in place up the tree  
+                     ~^ ~
+:23:24: error: array subscript is not an integer
+                if (thid == 0) { temp[n - 1] = 0; } // clear the last element 
+                                     ^~~~~~
+:25:21: warning: ordered comparison between pointer and integer ('int' and 'int __attribute__((address_space(1))) *')
+                for (int d = 1; d < n; d *= 2) // traverse down tree & build scan  
+                                ~ ^ ~

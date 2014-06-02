@@ -5,6 +5,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HpcExcercise1", "HpcExcerci
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SequentialScan", "SequentialScan\SequentialScan.vcxproj", "{75FBF363-13E9-4F78-A76D-989F779A48EE}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HpcExercise2", "HpcExercise2\HpcExercise2.vcxproj", "{E4937C6D-56F9-44EF-B61B-1F26BDE10B1A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -19,6 +21,10 @@ Global
 		{75FBF363-13E9-4F78-A76D-989F779A48EE}.Debug|Win32.Build.0 = Debug|Win32
 		{75FBF363-13E9-4F78-A76D-989F779A48EE}.Release|Win32.ActiveCfg = Release|Win32
 		{75FBF363-13E9-4F78-A76D-989F779A48EE}.Release|Win32.Build.0 = Release|Win32
+		{E4937C6D-56F9-44EF-B61B-1F26BDE10B1A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E4937C6D-56F9-44EF-B61B-1F26BDE10B1A}.Debug|Win32.Build.0 = Debug|Win32
+		{E4937C6D-56F9-44EF-B61B-1F26BDE10B1A}.Release|Win32.ActiveCfg = Release|Win32
+		{E4937C6D-56F9-44EF-B61B-1F26BDE10B1A}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
