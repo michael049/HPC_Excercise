@@ -72,6 +72,7 @@
     <ClInclude Include="tga.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="DeviceSource.cl" />
     <None Include="lenna.tga" />
     <None Include="rotation.cl" />
   </ItemGroup>

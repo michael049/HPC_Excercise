@@ -136,21 +136,21 @@ int main(int argc, char **argv){
 	command_queue = clCreateCommandQueue(myctx, deviceIds, 0, &err); 
 		
 	/* Create Memory Buffer */
-	float A [] = { 0,0,0,0,0,0 };
-	float B [] = { 1,2,3,4,5,6 };
+	float A [] = { 0,0,0,0,0,0, 0, 0};
+	float B [] = { 1,2,3,4,5,6, 7, 8};
 	float * T = NULL;
-	T = (float *) malloc(sizeof(float)*6*2);	
-	int num = 6;
+	T = (float *) malloc(sizeof(float)*8*2);	
+	int num = 8;
 
-	memobjA = clCreateBuffer(myctx, CL_MEM_READ_WRITE, 6*sizeof(float), NULL, &err);
-	memobjB = clCreateBuffer(myctx, CL_MEM_READ_WRITE, 6*sizeof(float), NULL, &err);
+	memobjA = clCreateBuffer(myctx, CL_MEM_READ_WRITE, 8*sizeof(float), NULL, &err);
+	memobjB = clCreateBuffer(myctx, CL_MEM_READ_WRITE, 8*sizeof(float), NULL, &err);
 	memobjC = clCreateBuffer(myctx, CL_MEM_READ_WRITE, sizeof(int), NULL, &err);
-	memobjT = clCreateBuffer(myctx, CL_MEM_READ_WRITE, 6*2*sizeof(float), NULL, &err);
+	memobjT = clCreateBuffer(myctx, CL_MEM_READ_WRITE, 8*2*sizeof(float), NULL, &err);
  
 	/* Copy input data to the memory buffer */
-	err = clEnqueueWriteBuffer(command_queue, memobjA, CL_TRUE, 0, 6*sizeof(float), A, 0, NULL, NULL);
-	err = clEnqueueWriteBuffer(command_queue, memobjB, CL_TRUE, 0, 6*sizeof(float), B, 0, NULL, NULL);
-	err = clEnqueueWriteBuffer(command_queue, memobjT, CL_TRUE, 0, 6*2*sizeof(float), T, 0, NULL, NULL);
+	err = clEnqueueWriteBuffer(command_queue, memobjA, CL_TRUE, 0, 8*sizeof(float), A, 0, NULL, NULL);
+	err = clEnqueueWriteBuffer(command_queue, memobjB, CL_TRUE, 0, 8*sizeof(float), B, 0, NULL, NULL);
+	err = clEnqueueWriteBuffer(command_queue, memobjT, CL_TRUE, 0, 8*2*sizeof(float), T, 0, NULL, NULL);
 	err = clEnqueueWriteBuffer(command_queue, memobjC, CL_TRUE, 0, sizeof(int), &num, 0, NULL, NULL);
 
 	/* Create Kernel Program from the source */
@@ -187,8 +187,8 @@ int main(int argc, char **argv){
 	//err = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&memobj);
  
 	/* Execute OpenCL Kernel */
-	size_t global_item_size = 6;
-    size_t local_item_size = 1;
+	size_t global_item_size = 8;
+	size_t local_item_size = 8;
     /* Execute OpenCL kernel as data parallel */
     err = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
     &global_item_size, &local_item_size, 0, NULL, NULL);
@@ -196,12 +196,14 @@ int main(int argc, char **argv){
  
 	/* Copy results from the memory buffer */
 	err = clEnqueueReadBuffer(command_queue, memobjA, CL_TRUE, 0,
-		6 * sizeof(float),A, 0, NULL, NULL);
+		8 * sizeof(float),A, 0, NULL, NULL);
  
+	err = clEnqueueReadBuffer(command_queue, memobjT, CL_TRUE, 0,
+		8 * sizeof(float),T, 0, NULL, NULL);
 	/* Display Result */
-	for (int i = 0; i < 6; i++)
+	for (int i = 0; i < 8; i++)
 	{
-		printf("%f ",A[i]);
+		printf("%f ",T[i]);
 		//printf("%f ",B[i]);
 	}
 

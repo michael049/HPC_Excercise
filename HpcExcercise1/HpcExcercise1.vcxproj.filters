@@ -32,5 +32,6 @@
     <None Include="rotation.cl">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="DeviceSource.cl" />
   </ItemGroup>
 </Project>
