@@ -267,11 +267,11 @@ void printTotalTime(cl_event timer){
 
 int main(int argc, char **argv)
 {
-  int err;
-	char* kernelSource = LoadProgramSourceFromFile("rotate_image.cl");
+	int err;
+	char* kernelSource = LoadProgramSourceFromFile("rotation.cl");
           
 	cl_platform_id* platformIds = GetPlatforms();
-    cl_device_id device_id = selectDevice(platformIds[1], 1);
+    cl_device_id device_id = selectDevice(platformIds[0], 1);
 	cl_context context = createContext(device_id);
 	cl_command_queue commands = createCommandQueue(device_id, context);
 	cl_program program = createAndBuildProgram(context, device_id, kernelSource);
@@ -311,7 +311,7 @@ int main(int argc, char **argv)
 	image.imageData = outputImageData;    
     tga::saveTGA(image, "output.tga");
     
-    cout<<"Size: "<<imageSize<<endl;
+    cout<<"Size: "<<imageSize<<endl; 
 	printTotalTime(event_timer);
     return 0;
 }

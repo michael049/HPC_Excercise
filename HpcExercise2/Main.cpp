@@ -6,6 +6,7 @@
 #include <fstream>
 
 #define MEM_SIZE (128)
+#define WORK_GORUP_SIZE 1024
 
 using namespace std;
 
@@ -114,6 +115,49 @@ string GetClSource(string filename)
 	return source;
 }
 
+float * GetNumbersFromFile(string filename, int * num)
+{
+	std::string line;
+	std::ifstream infile(filename);
+	long count = 0;
+	float * input = NULL;
+
+	while (std::getline(infile, line))
+	{
+		std::istringstream iss(line);
+		int a, b;
+		if (!(iss >> a)) 
+			break; // error
+
+		if (count == 0)
+		{	
+			input = (float * ) malloc(sizeof(float)*a);
+		}
+		else
+			input[count-1] = a;
+		count++;
+	}
+	*num = count-1;
+	return input;
+}
+
+void LogBuildError(cl_int err, cl_program program, cl_device_id deviceId)
+{
+	if(err != CL_SUCCESS)
+	{
+		size_t len;
+		clGetProgramBuildInfo(program, deviceId, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);
+		//allocate memory:
+		char *log = new char[len]; 
+		//then recall clGetProgramBuildInfo():
+		clGetProgramBuildInfo(program, deviceId, CL_PROGRAM_BUILD_LOG, len, log, NULL);
+		printf(log);
+		ofstream myfile;
+		myfile.open ("log.txt");
+		myfile << log;
+	}
+}
+
 int main(int argc, char **argv){
 	
 	cl_context myctx;
@@ -136,22 +180,28 @@ int main(int argc, char **argv){
 	command_queue = clCreateCommandQueue(myctx, deviceIds, 0, &err); 
 		
 	/* Create Memory Buffer */
-	float A [] = { 0,0,0,0,0,0, 0, 0};
-	float B [] = { 1,2,3,4,5,6, 7, 8};
-	float * T = NULL;
-	T = (float *) malloc(sizeof(float)*8*2);	
-	int num = 8;
+	float * A = NULL;
+	A = (float *) malloc(sizeof(float)*WORK_GORUP_SIZE*2);
 
-	memobjA = clCreateBuffer(myctx, CL_MEM_READ_WRITE, 8*sizeof(float), NULL, &err);
-	memobjB = clCreateBuffer(myctx, CL_MEM_READ_WRITE, 8*sizeof(float), NULL, &err);
+	
+	float input [] = { 1,2,3,4,5,6, 7, 8};	
+	float * inputPtr = NULL;
+
+	int num = 1000;
+	//int * numPt=NULL;
+	inputPtr = GetNumbersFromFile("numbers.txt", &num);
+	/*for (int i = 0; i < num; i++)
+	{
+		printf("%f ",inputPtr[i]);
+	}*/
+	//int num = 8;
+	float * T = NULL;
+	T = (float *) malloc(sizeof(float)*num*2);
+
+	memobjA = clCreateBuffer(myctx, CL_MEM_READ_WRITE, WORK_GORUP_SIZE*sizeof(float), NULL, &err);
+	memobjB = clCreateBuffer(myctx, CL_MEM_READ_WRITE, WORK_GORUP_SIZE*sizeof(float), NULL, &err);
 	memobjC = clCreateBuffer(myctx, CL_MEM_READ_WRITE, sizeof(int), NULL, &err);
-	memobjT = clCreateBuffer(myctx, CL_MEM_READ_WRITE, 8*2*sizeof(float), NULL, &err);
- 
-	/* Copy input data to the memory buffer */
-	err = clEnqueueWriteBuffer(command_queue, memobjA, CL_TRUE, 0, 8*sizeof(float), A, 0, NULL, NULL);
-	err = clEnqueueWriteBuffer(command_queue, memobjB, CL_TRUE, 0, 8*sizeof(float), B, 0, NULL, NULL);
-	err = clEnqueueWriteBuffer(command_queue, memobjT, CL_TRUE, 0, 8*2*sizeof(float), T, 0, NULL, NULL);
-	err = clEnqueueWriteBuffer(command_queue, memobjC, CL_TRUE, 0, sizeof(int), &num, 0, NULL, NULL);
+	memobjT = clCreateBuffer(myctx, CL_MEM_READ_WRITE, WORK_GORUP_SIZE*2*sizeof(float), NULL, &err);
 
 	/* Create Kernel Program from the source */
 	program = clCreateProgramWithSource(myctx, 1, &src_c,
@@ -160,51 +210,72 @@ int main(int argc, char **argv){
 	/* Build Kernel Program */
 	err = clBuildProgram(program, 1, &deviceIds, NULL, NULL, NULL);
 
-	if(err != CL_SUCCESS)
-	{
-		size_t len;
-		clGetProgramBuildInfo(program, deviceIds, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);
-		//allocate memory:
-		char *log = new char[len]; 
-		//then recall clGetProgramBuildInfo():
-		clGetProgramBuildInfo(program, deviceIds, CL_PROGRAM_BUILD_LOG, len, log, NULL);
-		printf(log);
-		ofstream myfile;
-		myfile.open ("log.txt");
-		myfile << log;
-	}
+	LogBuildError(err, program, deviceIds);
 
 	/* Create OpenCL Kernel */
 	kernel = clCreateKernel(program, "scan", &err);
 
-	/* Set OpenCL kernel arguments */
-	err = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&memobjA);
-	err = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&memobjB);
-	err = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&memobjC);
-	err = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&memobjT);
- 
-	/* Set OpenCL Kernel Parameters */
-	//err = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&memobj);
- 
-	/* Execute OpenCL Kernel */
-	size_t global_item_size = 8;
-	size_t local_item_size = 8;
-    /* Execute OpenCL kernel as data parallel */
-    err = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
-    &global_item_size, &local_item_size, 0, NULL, NULL);
-	//err = clEnqueueTask(command_queue, kernel, 0, NULL,NULL);
- 
-	/* Copy results from the memory buffer */
-	err = clEnqueueReadBuffer(command_queue, memobjA, CL_TRUE, 0,
-		8 * sizeof(float),A, 0, NULL, NULL);
- 
-	err = clEnqueueReadBuffer(command_queue, memobjT, CL_TRUE, 0,
-		8 * sizeof(float),T, 0, NULL, NULL);
-	/* Display Result */
-	for (int i = 0; i < 8; i++)
+
+	float * res = NULL;
+	res = (float *) malloc(sizeof(float)*num*2);
+
+	/* devide workload into chunks */
+	int iterations = num/WORK_GORUP_SIZE;
+	if(num%WORK_GORUP_SIZE != 0)
+		iterations = (num+WORK_GORUP_SIZE-1)/WORK_GORUP_SIZE;
+
+	int progressed = 0;
+	int lastItem =0; //temporary stores the lase item of last iteration
+
+	for (int i = 0; i < iterations; i++)
 	{
-		printf("%f ",T[i]);
-		//printf("%f ",B[i]);
+		
+		int workLoad = WORK_GORUP_SIZE;
+		if(i == iterations-1) //last iteration
+			workLoad = num-WORK_GORUP_SIZE*(i);
+
+		/* Copy input data to the memory buffer */
+		err = clEnqueueWriteBuffer(command_queue, memobjA, CL_TRUE, 0, workLoad*sizeof(float), A, 0, NULL, NULL);
+		err = clEnqueueWriteBuffer(command_queue, memobjB, CL_TRUE, 0, workLoad*sizeof(float), inputPtr, 0, NULL, NULL);
+		err = clEnqueueWriteBuffer(command_queue, memobjT, CL_TRUE, 0, workLoad*2*sizeof(float), T, 0, NULL, NULL);
+		err = clEnqueueWriteBuffer(command_queue, memobjC, CL_TRUE, 0, sizeof(int), &num, 0, NULL, NULL);
+
+		/* Set OpenCL kernel arguments */
+		err = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&memobjA);
+		err = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&memobjB);
+		err = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&memobjC);
+		err = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&memobjT);
+		
+
+		/* Execute OpenCL Kernel */
+		size_t global_item_size = workLoad;
+		size_t local_item_size = workLoad;
+
+		/* Execute OpenCL kernel as data parallel */
+		err = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
+		&global_item_size, &local_item_size, 0, NULL, NULL);
+ 
+		/* Copy results from the memory buffer */
+		err = clEnqueueReadBuffer(command_queue, memobjA, CL_TRUE, 0,
+			workLoad * sizeof(float),A, 0, NULL, NULL);
+
+		//write to results-array 
+		for (int j = 0; j < workLoad; j++)
+		{
+			//printf("%f ",A[j]);
+			res[progressed] = A[j]+lastItem;
+			progressed++;
+		}
+
+		lastItem += A[workLoad-1]+ inputPtr[workLoad-1];
+		inputPtr += workLoad;
+	}
+	
+ 
+	/* Display Result */
+	for (int i = 0; i < num; i++)
+	{
+		printf("%.0f ",res[i]);
 	}
 
 	getchar();
