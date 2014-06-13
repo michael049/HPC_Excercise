@@ -158,7 +158,7 @@ void LogBuildError(cl_int err, cl_program program, cl_device_id deviceId)
 	}
 }
 
-float * Scan(float * inputPtr, int num)
+int * Scan(int * inputPtr, int num)
 {
 	cl_context myctx;
 	cl_device_id deviceIds;
@@ -180,18 +180,18 @@ float * Scan(float * inputPtr, int num)
 	command_queue = clCreateCommandQueue(myctx, deviceIds, 0, &err); 
 		
 	/* Create Memory Buffer */
-	float * A = NULL;
-	A = (float *) malloc(sizeof(float)*WORK_GORUP_SIZE*2);
+	int * A = NULL;
+	A = (int *) malloc(sizeof(int)*WORK_GORUP_SIZE*2);
 
 	
 
-	float * T = NULL;
-	T = (float *) malloc(sizeof(float)*num*2);
+	int * T = NULL;
+	T = (int *) malloc(sizeof(int)*num*2);
 
-	memobjA = clCreateBuffer(myctx, CL_MEM_READ_WRITE, WORK_GORUP_SIZE*sizeof(float), NULL, &err);
-	memobjB = clCreateBuffer(myctx, CL_MEM_READ_WRITE, WORK_GORUP_SIZE*sizeof(float), NULL, &err);
+	memobjA = clCreateBuffer(myctx, CL_MEM_READ_WRITE, WORK_GORUP_SIZE*sizeof(int), NULL, &err);
+	memobjB = clCreateBuffer(myctx, CL_MEM_READ_WRITE, WORK_GORUP_SIZE*sizeof(int), NULL, &err);
 	memobjC = clCreateBuffer(myctx, CL_MEM_READ_WRITE, sizeof(int), NULL, &err);
-	memobjT = clCreateBuffer(myctx, CL_MEM_READ_WRITE, WORK_GORUP_SIZE*2*sizeof(float), NULL, &err);
+	memobjT = clCreateBuffer(myctx, CL_MEM_READ_WRITE, WORK_GORUP_SIZE*2*sizeof(int), NULL, &err);
 
 	/* Create Kernel Program from the source */
 	program = clCreateProgramWithSource(myctx, 1, &src_c,
@@ -206,8 +206,8 @@ float * Scan(float * inputPtr, int num)
 	kernel = clCreateKernel(program, "scan", &err);
 
 
-	float * res = NULL;
-	res = (float *) malloc(sizeof(float)*num);
+	int * res = NULL;
+	res = (int *) malloc(sizeof(int)*num);
 
 	/* devide workload into chunks */
 	int iterations = num/WORK_GORUP_SIZE;
@@ -225,9 +225,9 @@ float * Scan(float * inputPtr, int num)
 			workLoad = num-WORK_GORUP_SIZE*(i);
 
 		/* Copy input data to the memory buffer */
-		err = clEnqueueWriteBuffer(command_queue, memobjA, CL_TRUE, 0, workLoad*sizeof(float), A, 0, NULL, NULL);
-		err = clEnqueueWriteBuffer(command_queue, memobjB, CL_TRUE, 0, workLoad*sizeof(float), inputPtr, 0, NULL, NULL);
-		err = clEnqueueWriteBuffer(command_queue, memobjT, CL_TRUE, 0, workLoad*2*sizeof(float), T, 0, NULL, NULL);
+		err = clEnqueueWriteBuffer(command_queue, memobjA, CL_TRUE, 0, workLoad*sizeof(int), A, 0, NULL, NULL);
+		err = clEnqueueWriteBuffer(command_queue, memobjB, CL_TRUE, 0, workLoad*sizeof(int), inputPtr, 0, NULL, NULL);
+		err = clEnqueueWriteBuffer(command_queue, memobjT, CL_TRUE, 0, workLoad*2*sizeof(int), T, 0, NULL, NULL);
 		err = clEnqueueWriteBuffer(command_queue, memobjC, CL_TRUE, 0, sizeof(int), &num, 0, NULL, NULL);
 
 		/* Set OpenCL kernel arguments */
@@ -247,7 +247,7 @@ float * Scan(float * inputPtr, int num)
  
 		/* Copy results from the memory buffer */
 		err = clEnqueueReadBuffer(command_queue, memobjA, CL_TRUE, 0,
-			workLoad * sizeof(float),A, 0, NULL, NULL);
+			workLoad * sizeof(int),A, 0, NULL, NULL);
 
 		//write to results-array 
 		for (int j = 0; j < workLoad; j++)
@@ -264,19 +264,58 @@ float * Scan(float * inputPtr, int num)
 	return res;
 }
 
+int predicate(int number)
+{
+	if(number > 4)
+		return 1;
+	return 0;
+}
+
 int main(int argc, char **argv){
-	float * inputPtr = NULL;
-	float * res = NULL;
-	int num = 8;
+	int * inputPtr = NULL;
+	int input [] = {1,5,3,4,3,6,7,8,3,5,3,7,4,4,3,7};
+	int * scanRes = NULL;
+	int * scatterRes = NULL;
+	int num = 16;
+	int count =0; //counts the elements to scatter
 
-	inputPtr = GetNumbersFromFile("numbers.txt", &num);
+	int * evaluation = (int *) malloc(sizeof(int)*num);
 
-	res = Scan(inputPtr, num);	
- 
-	/* Display Result */
+	printf("\ninput: \n");
 	for (int i = 0; i < num; i++)
 	{
-		printf("%.0f ",res[i]);
+		printf("%d ",input[i]);
+		evaluation[i] = predicate(input[i]);
+		if(evaluation[i]== 1)
+			count++;
+		//printf("%d ",evaluation[i]);
+	}
+
+	//perform scan on the evaluation array
+	inputPtr = &evaluation[0];
+	scanRes = Scan(inputPtr, num);	
+ 
+	printf("\nscan result: \n");
+	/* Display scan Result */
+	for (int i = 0; i < num; i++)
+	{
+		printf("%d ",scanRes[i]);
+	}
+
+	//allocate memory for scatter result
+	scatterRes = (int *) malloc(sizeof(int)*count);
+
+	//res-array contains now the positions for the scatter
+	for (int i = 0; i < num; i++)
+	{
+		scatterRes[scanRes[i]] = input[i];
+	}
+
+	/* Display Scatter Result */
+	printf("\nscatter result: \n");
+	for (int i = 0; i < count; i++)
+	{
+		printf("%d ",scatterRes[i]);
 	}
 
 	getchar();

@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HpcExercise2", "HpcExercise
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HpcExercise.RandomListBuilder", "HpcExercise.RandomListBuilder\HpcExercise.RandomListBuilder.csproj", "{F8972F88-8478-4E1D-AC3A-D95DCCAAEEBC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HpcExercise3", "HpcExercise3\HpcExercise3.vcxproj", "{F7551CC7-224C-4B3F-9141-999431DE2607}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,6 +61,16 @@ Global
 		{F8972F88-8478-4E1D-AC3A-D95DCCAAEEBC}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{F8972F88-8478-4E1D-AC3A-D95DCCAAEEBC}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{F8972F88-8478-4E1D-AC3A-D95DCCAAEEBC}.Release|Win32.ActiveCfg = Release|Any CPU
+		{F7551CC7-224C-4B3F-9141-999431DE2607}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{F7551CC7-224C-4B3F-9141-999431DE2607}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{F7551CC7-224C-4B3F-9141-999431DE2607}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{F7551CC7-224C-4B3F-9141-999431DE2607}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F7551CC7-224C-4B3F-9141-999431DE2607}.Debug|Win32.Build.0 = Debug|Win32
+		{F7551CC7-224C-4B3F-9141-999431DE2607}.Release|Any CPU.ActiveCfg = Release|Win32
+		{F7551CC7-224C-4B3F-9141-999431DE2607}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{F7551CC7-224C-4B3F-9141-999431DE2607}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{F7551CC7-224C-4B3F-9141-999431DE2607}.Release|Win32.ActiveCfg = Release|Win32
+		{F7551CC7-224C-4B3F-9141-999431DE2607}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
